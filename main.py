@@ -153,20 +153,7 @@ caption = (
 # Start command handler
 @bot.on_message(filters.command(["start"]))
 async def start_command(bot: Client, message: Message):
-    try:
-        await bot.send_photo(
-            chat_id=message.chat.id,
-            photo="https://graph.org/file/5ac5e31be090132961587-a6dde68d91854eae0d.jpg",
-            caption=caption,
-            reply_markup=keyboard
-        )
-    except Exception as e:
-        # fallback to text only
-        await message.reply_text(
-            caption,
-            reply_markup=keyboard
-        )
-
+    await bot.send_photo(chat_id=message.chat.id, photo=random_image_url, caption=caption, reply_markup=keyboard)
     
 # Stop command handler
 @bot.on_message(filters.command("stop"))
@@ -454,98 +441,60 @@ async def help_command(client: Client, msg: Message):
 # Upload command handler
 @bot.on_message(filters.command(["txt"]))
 async def upload(bot: Client, m: Message):
-
     if not is_authorized(m.chat.id):
         await m.reply_text("**🚫You are not authorized to use this bot.**")
         return
 
-    editable = await m.reply_text("⚡𝗦𝗘𝗡𝗗 𝗧𝗫𝗧 𝗙𝗜𝗟𝗘⚡")
-    input_msg: Message = await bot.listen(editable.chat.id)
-
-    x = await input_msg.download()
-    await input_msg.delete(True)
-
+    editable = await m.reply_text(f"⚡𝗦𝗘𝗡𝗗 𝗧𝗫𝗧 𝗙𝗜𝗟𝗘⚡")
+    input: Message = await bot.listen(editable.chat.id)
+    x = await input.download()
+    await input.delete(True)
     file_name, ext = os.path.splitext(os.path.basename(x))
-
-    pdf_count = img_count = zip_count = video_count = 0
-    links = []
-
-    try:
-        with open(x, "r", encoding="utf-8") as f:
-            content = f.read().splitlines()
-
-        for line in content:
-            match = re.search(r'(https?://\S+)', line)
-            if match:
-                url = match.group(1)
-                links.append(url)
-
-                if url.endswith(".pdf"):
+    pdf_count = 0
+    img_count = 0
+    zip_count = 0
+    video_count = 0
+    
+    try:    
+        with open(x, "r") as f:
+            content = f.read()
+        content = content.split("\n")
+        
+        links = []
+        for i in content:
+            if "://" in i:
+                url = i.split("://", 1)[1]
+                links.append(i.split("://", 1))
+                if ".pdf" in url:
                     pdf_count += 1
-                elif url.endswith((".jpg", ".jpeg", ".png")):
+                elif url.endswith((".png", ".jpeg", ".jpg")):
                     img_count += 1
-                elif url.endswith(".zip"):
+                elif ".zip" in url:
                     zip_count += 1
                 else:
                     video_count += 1
-
         os.remove(x)
-
-    except Exception as e:
-        await m.reply_text("😶𝗜𝗻𝘃𝗮𝗹𝗶𝗱 𝗙𝗶𝗹𝗲 𝗜𝗻𝗽𝘂𝘁😶")
-        if os.path.exists(x):
-            os.remove(x)
-        return
-
-    await editable.edit(
-        f"`𝗧𝗼𝘁𝗮𝗹 🔗 𝗟𝗶𝗻𝗸𝘀 » {len(links)}\n\n"
-        f"🔹Img : {img_count}\n"
-        f"🔹Pdf : {pdf_count}\n"
-        f"🔹Zip : {zip_count}\n"
-        f"🔹Video : {video_count}`\n"
-        f"𝗦𝗲𝗻𝗱 𝗙𝗿𝗼𝗺 𝗪𝗵𝗲𝗿𝗲 𝗬𝗼𝘂 𝗪𝗮𝗻𝘁 𝗧𝗼 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱.`"
-    )
-
-
-   
-    #await editable.edit(f"`𝗧𝗼𝘁𝗮𝗹 🔗 𝗟𝗶𝗻𝗸𝘀 𝗙𝗼𝘂𝗻𝗱 𝗔𝗿𝗲 {len(links)}\n\n🔹Img : {img_count}  🔹Pdf : {pdf_count}\n🔹Zip : {zip_count}  🔹Video : {video_count}\n\n𝗦𝗲𝗻𝗱 𝗙𝗿𝗼𝗺 𝗪𝗵𝗲𝗿𝗲 𝗬𝗼𝘂 𝗪𝗮𝗻𝘁 𝗧𝗼 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱.`")
-    # ── STEP 1: Ask from where to start downloading ──
-    await editable.edit(
-        "📥 **𝗦𝗲𝗻𝗱 𝗦𝘁𝗮𝗿𝘁 𝗜𝗻𝗱𝗲𝘅**\n\n"
-        "➤ Send `1` to start from beginning\n"
-        "➤ Send any number to start from that link"
-    )
-
-    start_msg: Message = await bot.listen(editable.chat.id)
-    start_text = (start_msg.text or "").strip()
-    await start_msg.delete(True)
-
-    try:
-        start_from = int(start_text)
-        if start_from < 1:
-            start_from = 1
-        if start_from > len(links):
-            start_from = len(links)
     except:
-        start_from = 1
-
-
-    # ── STEP 2: Ask Batch Name ──
-    await editable.edit(
-        "📚 **𝗘𝗻𝘁𝗲𝗿 𝗬𝗼𝘂𝗿 𝗕𝗮𝘁𝗰𝗵 𝗡𝗮𝗺𝗲** 📚\n\n"
-        "➤ Send `1` to use default file name"
-    )
-
-    batch_msg: Message = await bot.listen(editable.chat.id)
-    batch_text = (batch_msg.text or "").strip()
-    await batch_msg.delete(True)
-
-    if batch_text == "1" or batch_text == "":
+        await m.reply_text("😶𝗜𝗻𝘃𝗮𝗹𝗶𝗱 𝗙𝗶𝗹𝗲 𝗜𝗻𝗽𝘂𝘁😶")
+        os.remove(x)
+        return
+   
+    await editable.edit(f"`𝗧𝗼𝘁𝗮𝗹 🔗 𝗟𝗶𝗻𝗸𝘀 𝗙𝗼𝘂𝗻𝗱 𝗔𝗿𝗲 {len(links)}\n\n🔹Img : {img_count}  🔹Pdf : {pdf_count}\n🔹Zip : {zip_count}  🔹Video : {video_count}\n\n𝗦𝗲𝗻𝗱 𝗙𝗿𝗼𝗺 𝗪𝗵𝗲𝗿𝗲 𝗬𝗼𝘂 𝗪𝗮𝗻𝘁 𝗧𝗼 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱.`")
+    input0: Message = await bot.listen(editable.chat.id)
+    raw_text = input0.text
+    await input0.delete(True)
+    try:
+        arg = int(raw_text)
+    except:
+        arg = 1
+    await editable.edit("📚 𝗘𝗻𝘁𝗲𝗿 𝗬𝗼𝘂𝗿 𝗕𝗮𝘁𝗰𝗵 𝗡𝗮𝗺𝗲 📚\n\n🦠 𝗦𝗲𝗻𝗱 `1` 𝗙𝗼𝗿 𝗨𝘀𝗲 𝗗𝗲𝗳𝗮𝘂𝗹𝘁 🦠")
+    input1: Message = await bot.listen(editable.chat.id)
+    raw_text0 = input1.text
+    await input1.delete(True)
+    if raw_text0 == '1':
         b_name = file_name
     else:
-        b_name = batch_text
-
-
+        b_name = raw_text0
     
 
     await editable.edit("**📸 𝗘𝗻𝘁𝗲𝗿 𝗥𝗲𝘀𝗼𝗹𝘂𝘁𝗶𝗼𝗻 📸**\n➤ `144`\n➤ `240`\n➤ `360`\n➤ `480`\n➤ `720`\n➤ `1080`")
@@ -598,15 +547,14 @@ async def upload(bot: Client, m: Message):
     input4: Message = await bot.listen(editable.chat.id)
     raw_text4 = input4.text
     await input4.delete(True)
-    if raw_text4 == "3":
-        MR = PW_TOKEN
+    if raw_text4 == 3:
+        MR = token
     else:
         MR = raw_text4
     
-    await editable.edit("𝗡𝗼𝘄 𝗦𝗲𝗻𝗱 𝗧𝗵𝗲 𝗧𝗵𝘂𝗺𝗯 𝗨𝗿𝗹 𝗘𝗴 » https://graph.org/file/5ac5e31be090132961587-a6dde68d91854eae0d.jpg\n\n𝗢𝗿 𝗜𝗳 𝗗𝗼𝗻'𝘁 𝗪𝗮𝗻𝘁 𝗧𝗵𝘂𝗺𝗯𝗻𝗮𝗶𝗹 𝗦𝗲𝗻𝗱 = 𝗻𝗼")
-    input6: Message = await bot.listen(editable.chat.id)
+    await editable.edit("𝗡𝗼𝘄 𝗦𝗲𝗻𝗱 𝗧𝗵𝗲 𝗧𝗵𝘂𝗺𝗯 𝗨𝗿𝗹 𝗘𝗴 » https://graph.org/file/13a89d77002442255efad-989ac290c1b3f13b44.jpg\n\n𝗢𝗿 𝗜𝗳 𝗗𝗼𝗻'𝘁 𝗪𝗮𝗻𝘁 𝗧𝗵𝘂𝗺𝗯𝗻𝗮𝗶𝗹 𝗦𝗲𝗻𝗱 = 𝗻𝗼")
+    input6 = message = await bot.listen(editable.chat.id)
     raw_text6 = input6.text
-    #raw_text6 = input6.text
     await input6.delete(True)
     await editable.delete()
 
@@ -615,17 +563,12 @@ async def upload(bot: Client, m: Message):
         getstatusoutput(f"wget '{thumb}' -O 'thumb.jpg'")
         thumb = "thumb.jpg"
     else:
-        thumb = None
-    
+        thumb == "no"
     failed_count =0
-    try:
-       count = int(raw_text)
-    except:
-       count = 1
-
-    if count > len(links):
-       count = len(links)
-
+    if len(links) == 1:
+        count = 1
+    else:
+        count = int(raw_text)
 
     try:
         for i in range(count - 1, len(links)):
@@ -907,7 +850,6 @@ async def upload(bot: Client, m: Message):
     await m.reply_text(f"<pre><code>📥𝗘𝘅𝘁𝗿𝗮𝗰𝘁𝗲𝗱 𝗕𝘆 ➤『{CR}』</code></pre>")
     await m.reply_text(f"<pre><code>『😏𝗥𝗲𝗮𝗰𝘁𝗶𝗼𝗻 𝗞𝗼𝗻 𝗗𝗲𝗴𝗮😏』</code></pre>")                 
 
+bot.run()
 if __name__ == "__main__":
-    print("Bot starting…")
-    bot.run()
-
+    asyncio.run(main())
