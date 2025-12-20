@@ -509,41 +509,42 @@ async def upload(bot: Client, m: Message):
 
    
     #await editable.edit(f"`𝗧𝗼𝘁𝗮𝗹 🔗 𝗟𝗶𝗻𝗸𝘀 𝗙𝗼𝘂𝗻𝗱 𝗔𝗿𝗲 {len(links)}\n\n🔹Img : {img_count}  🔹Pdf : {pdf_count}\n🔹Zip : {zip_count}  🔹Video : {video_count}\n\n𝗦𝗲𝗻𝗱 𝗙𝗿𝗼𝗺 𝗪𝗵𝗲𝗿𝗲 𝗬𝗼𝘂 𝗪𝗮𝗻𝘁 𝗧𝗼 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱.`")
-# ── STEP 1: Ask from where to start downloading ──
-await editable.edit(
-    "📥 **𝗦𝗲𝗻𝗱 𝗦𝘁𝗮𝗿𝘁 𝗜𝗻𝗱𝗲𝘅**\n\n"
-    "➤ Send `1` to start from beginning\n"
-    "➤ Send any number to start from that link"
-)
+    # ── STEP 1: Ask from where to start downloading ──
+    await editable.edit(
+        "📥 **𝗦𝗲𝗻𝗱 𝗦𝘁𝗮𝗿𝘁 𝗜𝗻𝗱𝗲𝘅**\n\n"
+        "➤ Send `1` to start from beginning\n"
+        "➤ Send any number to start from that link"
+    )
 
-start_msg: Message = await bot.listen(editable.chat.id)
-start_text = (start_msg.text or "").strip()
-await start_msg.delete(True)
+    start_msg: Message = await bot.listen(editable.chat.id)
+    start_text = (start_msg.text or "").strip()
+    await start_msg.delete(True)
 
-try:
-    start_from = int(start_text)
-    if start_from < 1:
+    try:
+        start_from = int(start_text)
+        if start_from < 1:
+            start_from = 1
+        if start_from > len(links):
+            start_from = len(links)
+    except:
         start_from = 1
-    if start_from > len(links):
-        start_from = len(links)
-except:
-    start_from = 1
 
 
-# ── STEP 2: Ask Batch Name ──
-await editable.edit(
-    "📚 **𝗘𝗻𝘁𝗲𝗿 𝗬𝗼𝘂𝗿 𝗕𝗮𝘁𝗰𝗵 𝗡𝗮𝗺𝗲** 📚\n\n"
-    "➤ Send `1` to use default file name"
-)
+    # ── STEP 2: Ask Batch Name ──
+    await editable.edit(
+        "📚 **𝗘𝗻𝘁𝗲𝗿 𝗬𝗼𝘂𝗿 𝗕𝗮𝘁𝗰𝗵 𝗡𝗮𝗺𝗲** 📚\n\n"
+        "➤ Send `1` to use default file name"
+    )
 
-batch_msg: Message = await bot.listen(editable.chat.id)
-batch_text = (batch_msg.text or "").strip()
-await batch_msg.delete(True)
+    batch_msg: Message = await bot.listen(editable.chat.id)
+    batch_text = (batch_msg.text or "").strip()
+    await batch_msg.delete(True)
 
-if batch_text == "1" or batch_text == "":
-    b_name = file_name
-else:
-    b_name = batch_text
+    if batch_text == "1" or batch_text == "":
+        b_name = file_name
+    else:
+        b_name = batch_text
+
 
     
 
