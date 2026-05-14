@@ -262,7 +262,7 @@ async def download_penpencilvod(url, cmd, name):
         return await default_download(url, cmd, name)
 
 async def download_video(url,cmd, name):
-    download_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c: -x 16 -j 32"'
+    download_cmd = f'{cmd} --remux-video mkv -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c: -x 16 -j 32"'
     global failed_counter
     print(download_cmd)
     logging.info(download_cmd)
@@ -281,9 +281,11 @@ async def download_video(url,cmd, name):
         if os.path.isfile(f"{name}.mkv"):
             return f"{name}.mkv"
         elif os.path.isfile(f"{name}.mp4"):
-            return f"{name}.mkv"
+    new_name = f"{name}.mkv"
+    subprocess.run(f'ffmpeg -i "{name}.mp4" -c copy "{new_name}"', shell=True)
+    return new_name
         elif os.path.isfile(f"{name}.mp4.webm"):
-            return f"{name}.mkv.webm"
+            return f"{name}.mp4.webm"
 
         return name
     except FileNotFoundError as exc:
